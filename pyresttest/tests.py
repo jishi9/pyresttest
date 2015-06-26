@@ -63,7 +63,7 @@ class Test(object):
     group = u'Default'
     name = u'Unnamed'
     validators = None  # Validators for response body, IE regexes, etc
-    stop_on_failure = False
+    stop_on_failure = None
     failures = None
     auth_username = None
     auth_password = None

@@ -237,6 +237,8 @@ def parse_configuration(node, base_config=None):
                 gen = parse_generator(generator_config)
                 gen_map[str(generator_name)] = gen
             test_config.generators = gen_map
+        elif key == u'stop_on_failure':
+            test_config.stop_on_failure = safe_to_bool(value)
 
     return test_config
 
@@ -587,7 +589,14 @@ def run_testsets(testsets):
             group_results[test.group].append(result)
 
             # handle stop_on_failure flag
-            if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
+            if test.stop_on_failure is not None:
+                stop_on_failure = test.stop_on_failure
+            elif myconfig.stop_on_failure is not None:
+                stop_on_failure = myconfig.stop_on_failure
+            else:
+                stop_on_failure = False
+
+            if not result.passed and stop_on_failure:
                 print 'STOP ON FAILURE! stopping test set execution, continuing with other test sets'
                 break
 
