@@ -83,6 +83,11 @@ class TestConfig:
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
+    def copy(self):
+        new_config = TestConfig()
+        new_config.__dict__.update(self.__dict__)
+        return new_config
+
 class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
@@ -154,7 +159,7 @@ def parse_headers(header_string):
         header_msg = Message(StringIO(headers))
         return dict(header_msg.items())
 
-def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
+def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None, test_config=None):
     """ Convert a Python data structure read from validated YAML to a set of structured testsets
     The data structure is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
@@ -169,7 +174,10 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
     """
 
     tests_out = list()
-    test_config = TestConfig()
+    if test_config is None:
+        test_config = TestConfig()
+    else:
+        test_config = test_config.copy()
     testsets = list()
     benchmarks = list()
 
@@ -191,7 +199,7 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                         test_files.add(importfile)
                         import_test_structure = read_test_file(importfile)
                         with cd(os.path.dirname(os.path.realpath(importfile))):
-                            import_testsets = parse_testsets(base_url, import_test_structure, test_files, vars=vars)
+                            import_testsets = parse_testsets(base_url, import_test_structure, test_files, vars=vars, test_config=test_config)
                             testsets.extend(import_testsets)
                 elif key == u'url':  # Simple test, just a GET to a URL
                     mytest = Test()
