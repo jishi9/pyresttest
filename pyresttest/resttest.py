@@ -360,7 +360,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         result.response_headers = parse_headers(result.response_headers)
     except Exception, e:
-        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.TEST_EXCEPTION))
+        trace = traceback.format_exc()
+        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_TEST_EXCEPTION))
         result.passed = False
         curl.close()
         return result
