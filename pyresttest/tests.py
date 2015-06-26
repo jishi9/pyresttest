@@ -384,7 +384,6 @@ class Test(object):
                 # Note: os.path.expandirs removed
                 mytest.body = ContentHandler.parse_content(configvalue)
             elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
-                mytest.headers
                 configvalue = flatten_dictionaries(configvalue)
 
                 if isinstance(configvalue, dict):

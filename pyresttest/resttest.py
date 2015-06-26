@@ -75,6 +75,10 @@ class TestConfig:
     variable_binds = None
     generators = None  # Map of generator name to generator function
 
+    # Inheritable config
+    stop_on_failure = None
+    headers = None
+
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
@@ -239,6 +243,22 @@ def parse_configuration(node, base_config=None):
             test_config.generators = gen_map
         elif key == u'stop_on_failure':
             test_config.stop_on_failure = safe_to_bool(value)
+        elif key == u'headers':
+            value = flatten_dictionaries(value)
+            if isinstance(value, dict):
+                templates = filter(lambda x: str(x[0]).lower() == 'template', value.items())
+            else:
+                templates = None
+
+            if templates:
+                # Should have single entry in dictionary keys
+                test_config.template_headers = True
+                test_config.headers = templates[0][1]
+            elif isinstance(value, dict):
+                test_config.template_headers = False
+                test_config.headers = value
+            else:
+                raise TypeError("Illegal header type: headers must be a dictionary or list of dictionary keys")
 
     return test_config
 
@@ -564,6 +584,14 @@ def run_testsets(testsets):
             if test.group not in group_results:
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
+
+            # Set common config
+            if test.stop_on_failure is None:
+                test.stop_on_failure = myconfig.stop_on_failure
+            if myconfig.headers is not None:
+                merged_headers = myconfig.headers.copy()
+                merged_headers.update(test._headers)
+                test.set_headers(merged_headers, isTemplate=myconfig.template_headers)
 
             result = run_test(test, test_config = myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
