@@ -78,6 +78,7 @@ class TestConfig:
     # Inheritable config
     stop_on_failure = None
     headers = None
+    generator_binds = None
 
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
@@ -259,6 +260,12 @@ def parse_configuration(node, base_config=None):
                 test_config.headers = value
             else:
                 raise TypeError("Illegal header type: headers must be a dictionary or list of dictionary keys")
+        elif key == u'generator_binds':
+            output = flatten_dictionaries(value)
+            output2 = dict()
+            for key, value in output.items():
+                output2[str(key)] = str(value)
+            test_config.generator_binds = output2
 
     return test_config
 
@@ -585,13 +592,21 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            # Set common config
+            # Inherit config from testset
             if test.stop_on_failure is None:
                 test.stop_on_failure = myconfig.stop_on_failure
             if myconfig.headers is not None:
                 merged_headers = myconfig.headers.copy()
                 merged_headers.update(test._headers)
-                test.set_headers(merged_headers, isTemplate=myconfig.template_headers)
+                if myconfig.template_headers:
+                    test.set_headers(merged_headers, isTemplate=True)
+                else:
+                    test._headers = merged_headers
+            if myconfig.generator_binds:
+                merged_generator_binds = myconfig.generator_binds.copy()
+                if test.generator_binds:
+                    merged_generator_binds.update(test.generator_binds)
+                test.generator_binds = merged_generator_binds
 
             result = run_test(test, test_config = myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
